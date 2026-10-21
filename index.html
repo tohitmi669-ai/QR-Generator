@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>QR Code Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; justify-content: center;
+           align-items: center; min-height: 100vh; margin: 0;
+           background: linear-gradient(135deg, #667eea, #764ba2); }
+    .card { background: white; padding: 30px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.2); text-align: center; width: 360px; }
+    h2 { margin-top: 0; color: #333; }
+    input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;
+            box-sizing: border-box; font-size: 14px; margin-bottom: 12px; }
+    input:focus { outline: none; border-color: #667eea; }
+    button { width: 100%; padding: 12px; background: #667eea; color: white;
+             border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    button:hover { background: #5568d3; }
+    #qrcode { margin-top: 20px; display: flex; justify-content: center; }
+    canvas { border-radius: 8px; }
+    .actions { margin-top: 12px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🔗 QR Code Generator</h2>
+    <input type="text" id="link" placeholder="Masukkan link/URL..." />
+    <button onclick="generateQR()">Generate QR</button>
+    <div id="qrcode"></div>
+    <div class="actions" id="actions">
+      <button onclick="downloadQR()">⬇️ Download PNG</button>
+    </div>
+  </div>
+
+  <script>
+    let canvasEl = null;
+
+    function generateQR() {
+      const link = document.getElementById('link').value.trim();
+      const container = document.getElementById('qrcode');
+      container.innerHTML = '';
+      document.getElementById('actions').style.display = 'none';
+
+      if (!link) { alert('Masukkan link dulu!'); return; }
+
+      QRCode.toCanvas(link, { width: 250, margin: 2 }, (err, canvas) => {
+        if (err) { alert('Gagal generate QR'); return; }
+        canvasEl = canvas;
+        container.appendChild(canvas);
+        document.getElementById('actions').style.display = 'block';
+      });
+    }
+
+    function downloadQR() {
+      if (!canvasEl) return;
+      const a = document.createElement('a');
+      a.download = 'qrcode.png';
+      a.href = canvasEl.toDataURL('image/png');
+      a.click();
+    }
+
+    // Enter untuk generate
+    document.getElementById('link').addEventListener('keypress', e => {
+      if (e.key === 'Enter') generateQR();
+    });
+  </script>
+</body>
+</html>
