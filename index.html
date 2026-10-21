@@ -3,102 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator QR Code Ulasan Google Maps</title>
+    <title>Google Review - Poster Generator</title>
     
-    <!-- Memuat Library QR Code Styling -->
+    <!-- Font dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Library QR Code -->
     <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
 
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #4285F4, #34A853); 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #1a1a2e; /* Background gelap agar poster lebih menonjol */
             display: flex; 
             justify-content: center; 
             align-items: center; 
             min-height: 100vh; 
-            margin: 0; 
             padding: 20px;
         }
-        .card { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
-            width: 100%; 
-            max-width: 450px; 
-            text-align: center; 
-        }
-        h2 { margin-top: 0; color: #333; font-size: 22px;}
-        p.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; line-height: 1.4;}
-        
-        .input-group { text-align: left; margin-bottom: 15px; }
-        .input-group label { font-size: 13px; color: #555; font-weight: bold; display: block; margin-bottom: 5px; }
-        input[type="text"], input[type="file"] { 
-            width: 100%; 
-            padding: 10px; 
-            border: 2px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 14px; 
-        }
-        input[type="text"]:focus { outline: none; border-color: #4285F4; }
-        
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            background: #4285F4; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            font-weight: bold;
-            cursor: pointer; 
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
-        button:hover { background: #357ae8; }
-        
-        #result-area { margin-top: 25px; display: none; }
-        
-        /* Area Preview QR */
-        #qr-preview-container {
-            width: 100%;
+
+        /* --- KONTROL INPUT (Kiri Atas) --- */
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 999;
             display: flex;
-            justify-content: center;
-            margin-bottom: 15px;
-            border: 1px dashed #ccc;
+            flex-direction: column;
+            gap: 12px;
+            width: 280px;
+        }
+        .controls label { font-size: 13px; font-weight: 800; color: #333; }
+        .controls input {
             padding: 10px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            background: #fafafa;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .controls input:focus { outline: none; border-color: #4285F4; }
+        .controls button {
+            padding: 10px;
+            background: linear-gradient(135deg, #4285F4, #34A853);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .controls button:hover { transform: scale(1.02); }
+        .controls small { font-size: 11px; color: #666; line-height: 1.4; }
+
+        /* --- DESAIN POSTER --- */
+        .poster-wrapper {
+            position: relative;
+            padding: 10px;
+            background: linear-gradient(135deg, #4285F4, #EA4335, #FBBC05, #34A853);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .poster {
+            background-color: #ffffff;
+            width: 750px;
+            height: 750px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Bentuk Abstrak (Blobs) yang Lebih Dinamis */
+        .blob { position: absolute; filter: blur(2px); z-index: 1; }
+        .blob-top-left {
+            top: -80px; left: -80px; width: 320px; height: 320px;
+            background: linear-gradient(135deg, #4285F4, #8ab4f8);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            transform: rotate(-20deg);
+        }
+        .blob-top-right {
+            top: -100px; right: -100px; width: 380px; height: 380px;
+            background: linear-gradient(225deg, #FBBC05, #fce8b2);
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            transform: rotate(30deg);
+        }
+        .blob-bottom-left {
+            bottom: -120px; left: -100px; width: 380px; height: 380px;
+            background: linear-gradient(45deg, #EA4335, #f28b82);
+            border-radius: 50% 50% 30% 70% / 50% 60% 40% 50%;
+            transform: rotate(45deg);
+        }
+        .blob-bottom-right {
+            bottom: -80px; right: -80px; width: 300px; height: 300px;
+            background: linear-gradient(315deg, #34A853, #81c995);
+            border-radius: 40% 60% 70% 30% / 60% 40% 50% 50%;
+            transform: rotate(-15deg);
+        }
+
+        /* Konten di atas Blob */
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+
+        /* Header Teks */
+        .header-text { text-align: center; margin-top: 10px; }
+        .google-text {
+            font-size: 70px;
+            font-weight: 800;
+            letter-spacing: -3px;
+            margin-bottom: -15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .google-text span:nth-child(1) { color: #4285F4; }
+        .google-text span:nth-child(2) { color: #EA4335; }
+        .google-text span:nth-child(3) { color: #FBBC05; }
+        .google-text span:nth-child(4) { color: #4285F4; }
+        .google-text span:nth-child(5) { color: #34A853; }
+        .google-text span:nth-child(6) { color: #EA4335; }
+        
+        .review-text {
+            font-size: 65px;
+            font-weight: 800;
+            color: #202124;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+        .stars {
+            color: #FBBC05;
+            font-size: 40px;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .sub-header {
+            font-size: 20px;
+            color: #202124;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* Garis Hiasan (Confetti) */
+        .decoration { position: absolute; border-radius: 10px; z-index: 1; }
+        .deco-1 { width: 8px; height: 30px; background: #4285F4; top: 140px; left: 140px; transform: rotate(-45deg); }
+        .deco-2 { width: 8px; height: 30px; background: #EA4335; top: 200px; left: 110px; transform: rotate(-70deg); }
+        .deco-3 { width: 8px; height: 30px; background: #FBBC05; top: 250px; left: 150px; transform: rotate(-100deg); }
+        
+        .deco-4 { width: 8px; height: 30px; background: #34A853; top: 140px; right: 140px; transform: rotate(45deg); }
+        .deco-5 { width: 8px; height: 30px; background: #EA4335; top: 200px; right: 110px; transform: rotate(70deg); }
+        .deco-6 { width: 8px; height: 30px; background: #FBBC05; top: 250px; right: 150px; transform: rotate(100deg); }
+
+        /* Bagian Tengah (QR Code & Ikon) */
+        .middle-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 30px;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Ikon Maps (Menggunakan SVG asli agar tajam) */
+        .maps-svg {
+            position: absolute;
+            left: 60px;
+            top: 30px;
+            width: 110px;
+            height: 110px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Animasi Melayang */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Bingkai QR Code (Efek 3D) */
+        .qr-wrapper {
+            background: white;
+            padding: 18px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #4285F4, #EA4335, #FBBC05, #34A853);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25), inset 0 0 0 4px white;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s;
+        }
+        .qr-wrapper:hover { transform: scale(1.02); }
+        
+        .qr-inner {
+            background: white;
+            padding: 12px;
+            border-radius: 18px;
         }
         
-        .btn-download { background: #28a745; margin-top: 15px; }
-        .btn-download:hover { background: #218838; }
+        /* Teks "Scan di sini" */
+        .scan-container {
+            position: absolute;
+            right: 40px;
+            top: 20px;
+        }
+        .scan-text {
+            font-family: 'Caveat', cursive;
+            font-size: 55px;
+            color: #202124;
+            transform: rotate(-8deg);
+            line-height: 0.9;
+            font-weight: 700;
+        }
+        .arrow {
+            position: absolute;
+            right: 170px;
+            top: 80px;
+            width: 70px;
+            height: 50px;
+            border-bottom: 6px solid #202124;
+            border-left: 6px solid #202124;
+            border-bottom-left-radius: 40px;
+            transform: rotate(15deg);
+        }
+        .arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: -14px;
+            width: 0;
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-right: 20px solid #202124;
+            transform: rotate(45deg);
+        }
+
+        /* Bagian Bawah (Tombol) */
+        .footer-section {
+            margin-top: auto;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .blue-button {
+            background: linear-gradient(135deg, #1547a3, #0d2b66);
+            color: white;
+            border-radius: 60px;
+            padding: 18px 45px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            box-shadow: 0 12px 25px rgba(21, 71, 163, 0.4);
+            transition: all 0.3s;
+        }
+        .blue-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(21, 71, 163, 0.6);
+        }
+
+        .phone-svg {
+            width: 35px;
+            height: 55px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .btn-text {
+            text-align: left;
+            border-left: 2px solid rgba(255,255,255,0.4);
+            padding-left: 20px;
+        }
+        .btn-text h3 { font-size: 20px; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.5px;}
+        .btn-text p { font-size: 15px; opacity: 0.9; font-weight: 400;}
+
+        .support-text {
+            margin-top: 25px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #202124;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .heart {
+            color: #EA4335;
+            font-size: 22px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsif untuk layar kecil */
+        @media (max-width: 850px) {
+            .poster { width: 100%; height: auto; aspect-ratio: 1/1; }
+            .google-text { font-size: 55px; }
+            .review-text { font-size: 50px; }
+            .qr-wrapper { transform: scale(0.8); }
+            .controls { position: relative; margin-bottom: 20px; top:0; left:0; width: 100%; max-width: 400px; }
+            body { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>🎨 QR Code Ulasan Google</h2>
-        <p class="subtitle">Masukkan Place ID untuk membuat QR Code dengan gaya modern. Anda juga bisa mengunggah gambar poster untuk dijadikan background.</p>
-        
-        <div class="input-group">
-            <label>1. Place ID Google Maps</label>
-            <input type="text" id="placeId" placeholder="Contoh: ChIJN1t_tDeuEmsRUsoyG83frY4">
-        </div>
+    <!-- Kontrol Input -->
+    <div class="controls">
+        <label>Place ID Google Maps:</label>
+        <input type="text" id="placeId" value="ChIJcf_Xz2WFei4Ryh5zkNwlHws" placeholder="Masukkan Place ID...">
+        <button onclick="generateQR()">Update QR Code</button>
+        <small>*Klik Kanan > "Save image as" atau Screenshot untuk menyimpan poster.</small>
+    </div>
 
-        <div class="input-group">
-            <label>2. Upload Gambar Poster (Opsional)</label>
-            <input type="file" id="bgImage" accept="image/*">
-        </div>
-        
-        <button onclick="generateQR()">Generate QR Code</button>
+    <!-- POSTER DESIGN -->
+    <div class="poster-wrapper">
+        <div class="poster" id="poster">
+            
+            <!-- Bentuk Background -->
+            <div class="blob blob-top-left"></div>
+            <div class="blob blob-top-right"></div>
+            <div class="blob blob-bottom-left"></div>
+            <div class="blob blob-bottom-right"></div>
 
-        <div id="result-area">
-            <div id="qr-preview-container">
-                <div id="qrcode"></div>
+            <!-- Garis Hiasan -->
+            <div class="decoration deco-1"></div>
+            <div class="decoration deco-2"></div>
+            <div class="decoration deco-3"></div>
+            <div class="decoration deco-4"></div>
+            <div class="decoration deco-5"></div>
+            <div class="decoration deco-6"></div>
+
+            <div class="content">
+                <!-- Header Teks -->
+                <div class="header-text">
+                    <div class="google-text">
+                        <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                    </div>
+                    <div class="review-text">Review</div>
+                    <div class="stars">★★★★★</div>
+                    <div class="sub-header">
+                        Kami sangat menghargai<br>penilaian dan ulasan Anda!
+                    </div>
+                </div>
+
+                <!-- Bagian Tengah (QR) -->
+                <div class="middle-section">
+                    
+                    <!-- Ikon Maps SVG (Kiri) -->
+                    <svg class="maps-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="url(#maps-gradient)"/>
+                        <defs>
+                            <linearGradient id="maps-gradient" x1="5" y1="2" x2="19" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#4285F4"/>
+                                <stop offset="0.33" stop-color="#34A853"/>
+                                <stop offset="0.66" stop-color="#FBBC05"/>
+                                <stop offset="1" stop-color="#EA4335"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
+                    <!-- QR Code (Tengah) -->
+                    <div class="qr-wrapper">
+                        <div class="qr-inner">
+                            <div id="qrcode"></div>
+                        </div>
+                    </div>
+
+                    <!-- Teks & Panah (Kanan) -->
+                    <div class="scan-container">
+                        <div class="scan-text">Scan<br>di sini</div>
+                        <div class="arrow"></div>
+                    </div>
+
+                </div>
+
+                <!-- Footer (Tombol Biru) -->
+                <div class="footer-section">
+                    <div class="blue-button">
+                        <!-- Ikon HP SVG -->
+                        <svg class="phone-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="2" width="12" height="20" rx="2" stroke="white" stroke-width="2"/>
+                            <circle cx="12" cy="18" r="1" fill="white"/>
+                        </svg>
+                        <div class="btn-text">
+                            <h3>Berikan ulasan terbaik</h3>
+                            <p>untuk kami di Google Review</p>
+                        </div>
+                    </div>
+                    <div class="support-text">
+                        Dukungan Anda sangat berarti bagi kami <span class="heart">❤️</span>
+                    </div>
+                </div>
             </div>
-            <button class="btn-download" onclick="downloadQR()">⬇️ Download Hasil (PNG)</button>
         </div>
     </div>
 
@@ -107,95 +427,48 @@
 
         function generateQR() {
             const placeId = document.getElementById('placeId').value.trim();
-            const resultArea = document.getElementById('result-area');
             const qrContainer = document.getElementById('qrcode');
-            const fileInput = document.getElementById('bgImage');
 
             if (!placeId) {
-                alert('Silakan masukkan Place ID terlebih dahulu!');
+                alert('Masukkan Place ID terlebih dahulu!');
                 return;
             }
 
             const reviewUrl = `https://search.google.com/local/writereview?placeid=${placeId}`;
             
             qrContainer.innerHTML = '';
-            resultArea.style.display = 'block';
 
-            // Konfigurasi Desain QR Code (Gaya Membulat & Berwarna)
-            let qrOptions = {
-                width: 300,
-                height: 300,
+            // Konfigurasi QR Code
+            qrCodeInstance = new QRCodeStyling({
+                width: 260,
+                height: 260,
                 data: reviewUrl,
-                margin: 10,
+                margin: 0,
                 qrOptions: {
-                    errorCorrectionLevel: 'H' // High (wajib jika ada gambar di tengah)
+                    errorCorrectionLevel: 'H'
                 },
                 dotsOptions: {
-                    color: "#000000", // Warna titik QR
-                    type: "rounded"   // Titik membulat
+                    color: "#202124",
+                    type: "square" // Tetap kotak agar mudah discan
                 },
                 backgroundOptions: {
                     color: "#ffffff",
                 },
                 cornersSquareOptions: {
-                    color: "#4285F4", // Warna kotak sudut (Biru Google)
-                    type: "extra-rounded" 
+                    color: "#202124",
+                    type: "square" 
                 },
                 cornersDotOptions: {
-                    color: "#EA4335", // Warna titik dalam (Merah Google)
-                    type: "dot"
+                    color: "#202124", 
+                    type: "square"
                 }
-            };
-
-            // Jika user mengupload gambar poster
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const imageUrl = e.target.result;
-                    
-                    qrOptions = {
-                        width: 500,
-                        height: 500,
-                        data: reviewUrl,
-                        margin: 0,
-                        imageOptions: {
-                            hideBackgroundDots: true, 
-                            imageSize: 0.4, 
-                            margin: 5
-                        },
-                        dotsOptions: {
-                            color: "#000000",
-                            type: "rounded"
-                        },
-                        backgroundOptions: {
-                            color: "#ffffff",
-                        },
-                        cornersSquareOptions: { type: "extra-rounded", color: "#4285F4" },
-                        cornersDotOptions: { type: "dot", color: "#EA4335" }
-                    };
-                    
-                    qrOptions.image = imageUrl;
-
-                    qrCodeInstance = new QRCodeStyling(qrOptions);
-                    qrCodeInstance.append(qrContainer);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                qrCodeInstance = new QRCodeStyling(qrOptions);
-                qrCodeInstance.append(qrContainer);
-            }
-        }
-
-        function downloadQR() {
-            if (!qrCodeInstance) return;
-            
-            qrCodeInstance.download({
-                name: "qr-code-ulasan-google",
-                extension: "png"
             });
+
+            qrCodeInstance.append(qrContainer);
         }
+
+        // Jalankan otomatis saat halaman dimuat
+        window.onload = generateQR;
     </script>
 
 </body>
