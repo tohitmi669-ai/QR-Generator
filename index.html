@@ -1,69 +1,166 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>QR Code Generator</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; display: flex; justify-content: center;
-           align-items: center; min-height: 100vh; margin: 0;
-           background: linear-gradient(135deg, #667eea, #764ba2); }
-    .card { background: white; padding: 30px; border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.2); text-align: center; width: 360px; }
-    h2 { margin-top: 0; color: #333; }
-    input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;
-            box-sizing: border-box; font-size: 14px; margin-bottom: 12px; }
-    input:focus { outline: none; border-color: #667eea; }
-    button { width: 100%; padding: 12px; background: #667eea; color: white;
-             border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
-    button:hover { background: #5568d3; }
-    #qrcode { margin-top: 20px; display: flex; justify-content: center; }
-    canvas { border-radius: 8px; }
-    .actions { margin-top: 12px; display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Link Ulasan Google Maps</title>
+    
+    <!-- Library QR Code (qrcodejs) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+        }
+        .card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+        }
+        h2 { margin-top: 0; color: #333; font-size: 22px;}
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; line-height: 1.4;}
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            margin-bottom: 15px; 
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus { outline: none; border-color: #667eea; }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: background 0.3s;
+        }
+        button:hover { background: #5568d3; }
+        
+        /* Area Hasil */
+        #result-area { margin-top: 25px; display: none; }
+        #link-output { 
+            width: 100%; 
+            padding: 10px; 
+            background: #e8f0fe; 
+            border: 1px dashed #667eea; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            color: #333;
+            margin-bottom: 15px;
+            word-break: break-all;
+        }
+        
+        /* Styling kotak QR */
+        #qrcode { 
+            display: flex; 
+            justify-content: center; 
+            margin-bottom: 15px;
+        }
+        #qrcode img { 
+            border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .btn-download {
+            background: #28a745;
+        }
+        .btn-download:hover {
+            background: #218838;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🔗 QR Code Generator</h2>
-    <input type="text" id="link" placeholder="Masukkan link/URL..." />
-    <button onclick="generateQR()">Generate QR</button>
-    <div id="qrcode"></div>
-    <div class="actions" id="actions">
-      <button onclick="downloadQR()">⬇️ Download PNG</button>
+
+    <div class="card">
+        <h2>📍 Link Ulasan Langsung</h2>
+        <p class="subtitle">Masukkan Place ID lokasi untuk membuat link yang langsung membuka form ulasan Google Maps.</p>
+        
+        <input type="text" id="placeId" placeholder="Contoh: ChIJN1t_tDeuEmsRUsoyG83frY4">
+        <button onclick="generateQR()">Buat Link & QR Code</button>
+
+        <div id="result-area">
+            <input type="text" id="link-output" readonly onclick="this.select()" title="Klik untuk copy">
+            <div id="qrcode"></div>
+            <button class="btn-download" onclick="downloadQR()">⬇️ Download QR Code</button>
+        </div>
     </div>
-  </div>
 
-  <script>
-    let canvasEl = null;
+    <script>
+        function generateQR() {
+            const placeId = document.getElementById('placeId').value.trim();
+            const resultArea = document.getElementById('result-area');
+            const linkOutput = document.getElementById('link-output');
+            const qrContainer = document.getElementById('qrcode');
 
-    function generateQR() {
-      const link = document.getElementById('link').value.trim();
-      const container = document.getElementById('qrcode');
-      container.innerHTML = '';
-      document.getElementById('actions').style.display = 'none';
+            // Validasi input
+            if (!placeId) {
+                alert('Silakan masukkan Place ID terlebih dahulu!');
+                return;
+            }
 
-      if (!link) { alert('Masukkan link dulu!'); return; }
+            // 1. Buat URL Google Maps Review
+            const reviewUrl = `https://search.google.com/local/writereview?placeid=${placeId}`;
+            
+            // 2. Tampilkan hasil dan isi input link
+            resultArea.style.display = 'block';
+            linkOutput.value = reviewUrl;
 
-      QRCode.toCanvas(link, { width: 250, margin: 2 }, (err, canvas) => {
-        if (err) { alert('Gagal generate QR'); return; }
-        canvasEl = canvas;
-        container.appendChild(canvas);
-        document.getElementById('actions').style.display = 'block';
-      });
-    }
+            // 3. Bersihkan QR Code sebelumnya (jika ada)
+            qrContainer.innerHTML = '';
 
-    function downloadQR() {
-      if (!canvasEl) return;
-      const a = document.createElement('a');
-      a.download = 'qrcode.png';
-      a.href = canvasEl.toDataURL('image/png');
-      a.click();
-    }
+            // 4. Generate QR Code Baru menggunakan qrcodejs
+            new QRCode(qrContainer, {
+                text: reviewUrl,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
 
-    // Enter untuk generate
-    document.getElementById('link').addEventListener('keypress', e => {
-      if (e.key === 'Enter') generateQR();
-    });
-  </script>
+        function downloadQR() {
+            const qrImage = document.querySelector('#qrcode img');
+            
+            // Pastikan gambar QR sudah terbuat
+            if (!qrImage) {
+                alert('QR Code belum dibuat!');
+                return;
+            }
+
+            // Buat elemen <a> untuk mendownload gambar
+            const link = document.createElement('a');
+            link.download = 'qrcode-ulasan.png';
+            link.href = qrImage.src;
+            link.click();
+        }
+
+        // Jalankan fungsi jika user menekan tombol Enter
+        document.getElementById('placeId').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                generateQR();
+            }
+        });
+    </script>
+
 </body>
 </html>
